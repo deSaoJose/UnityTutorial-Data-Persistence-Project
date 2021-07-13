@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -11,12 +12,15 @@ public class MainManager : MonoBehaviour
     public Rigidbody Ball;
 
     public Text ScoreText;
+    public Text NameText;
     public GameObject GameOverText;
     
     private bool m_Started = false;
     private int m_Points;
     
     private bool m_GameOver = false;
+    private int highscore = 0;
+    private string highscoreName;
 
     
     // Start is called before the first frame update
@@ -36,6 +40,8 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+        GetHighscore();
+        SetName();
     }
 
     private void Update()
@@ -72,5 +78,51 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+        SaveHighscore();
+    }
+
+    public void SetName()
+    {
+        if (MemoryManager.Instance != null)
+        {
+            NameText.text = "Best Score : " + highscoreName + " " + highscore;
+        }
+    }
+
+    public void SaveHighscore()
+    {
+        if(m_Points > highscore)
+        {
+            highscore = m_Points;
+            SaveData data = new SaveData();
+            data.Highscore = highscore;
+            data.Name = MemoryManager.Instance.Name;
+
+            string json = JsonUtility.ToJson(data);
+
+            File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+        }
+        
+    }
+
+    public void GetHighscore()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            highscore = data.Highscore;
+            highscoreName = data.Name;
+
+        }
+    }
+
+    [System.Serializable]
+    class SaveData
+    {
+        public int Highscore;
+        public string Name;
     }
 }
